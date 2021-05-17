@@ -4,19 +4,18 @@ commands:
   destroy-environment:
     description: Destroy back-end and front-end cloudformation stacks given a workflow ID.
     parameters:
-      # Add parameter here
+      # Add parameter here   
     steps:
       - run:
           name: Destroy environments
           when: on_fail
           command: |
             # Your code here
-            exit 1
-
+            
   revert-migrations:
     description: Revert the last migration if successfully run in the current workflow.
     parameters:
-      # Add parameter here
+      # Add parameter here     
     steps:
       - run:
           name: Revert migrations
@@ -29,10 +28,9 @@ commands:
             #  cd ~/project/backend
             #  npm install
             #  Add revert code here. You can find this in the Getting Started section.
-              exit 1
+              
             fi
-
-jobs:
+jobs:     
   build-frontend:
     docker:
       - image: circleci/node:13.8.0
@@ -43,7 +41,10 @@ jobs:
       - run:
           name: Build front-end
           command: |
-            cd frontend && npm i
+            cd frontend
+            npm i
+            npm run build
+            
       - save_cache:
           paths: [frontend/node_modules]
           key: frontend-build
@@ -58,48 +59,72 @@ jobs:
       - run:
           name: Back-end build
           command: |
-            cd backend && npm i
+             cd backend
+             npm i 
+             npm run build
+            
       - save_cache:
           paths: [backend/node_modules]
           key: backend-build
 
   test-frontend:
     docker:
-      # Docker image here
+      - image: circleci/node:13.8.0
     steps:
-      # Checkout code from git
-      # Restore from cache
-      # Your job code here
-
+      - checkout
+      - restore_cache:
+          keys: [frontend-build]
+      - run:
+          name: frontend test 
+          command: |
+           cd frontend
+           npm i
+           npm run test
+      
+                
   test-backend:
     docker:
-      # Docker image here
+      - image: circleci/node:13.8.0
     steps:
-      # Checkout code from git
-      # Restore from cache
-      # Your job code here
-
+      - checkout
+      - restore_cache:
+          keys: [backend-build]
+      - run:
+          name: backend test 
+          command: |
+           cd backend
+           npm i
+           npm run test
+            
   scan-frontend:
     docker:
-      # Docker image here
+      - image: circleci/node:13.8.0
     steps:
-      # Checkout code from git
-      # Restore from cache
-      # Your job code here
-
+      - checkout
+      - restore_cache:
+         keys: [frontend-build]
+      - run:
+          name: Analyze the code
+          command: |
+            cd frontend
+            npm audit fix --audit-level=critical --force
   scan-backend:
     docker:
-      # Docker image here
+      - image: circleci/node:13.8.0
     steps:
-      # Checkout code from git
-      # Restore from cache
-      # Your job code here
-
+      - checkout
+      - restore_cache:
+          keys: [backend-build]
+      - run:
+          name: Analyze the code
+          command: |
+            cd backend
+            npm audit fix --audit-level=critical --force
   deploy-infrastructure:
     docker:
-      # Docker image here that supports AWS CLI
+      - image: amazon/aws-cli
     steps:
-      # Checkout code from git
+      - checkout
       - run:
           name: Ensure back-end infrastructure exists
           command: |
@@ -108,7 +133,7 @@ jobs:
               #--tags project=your-tag \
               # --stack-name "your back-end stack name with workflow id" \
               # --parameter-overrides ID="your workflow id"  
-              exit 1
+              
       - run:
           name: Ensure front-end infrastructure exist
           command: |
@@ -127,13 +152,13 @@ jobs:
           root: ~/
           paths:
             - project/.circleci/ansible/inventory.txt
-      # Here's where you will add some code to rollback on failure
+      # Here's where you will add some code to rollback on failure      
 
   configure-infrastructure:
     docker:
-      # Docker image here that supports Ansible
+      - image: python:3.7-alpine3.12
     steps:
-      # Checkout code from git
+      - checkout
       # Add ssh keys with fingerprint
       # attach workspace
       - run:
@@ -146,13 +171,13 @@ jobs:
           command: |
             # Your code here
             exit 1
-      # Here's where you will add some code to rollback on failure
+      # Here's where you will add some code to rollback on failure      
 
   run-migrations:
     docker:
-      # Docker image here that supports NodeJS
+      - image: circleci/node:13.8.0
     steps:
-      # Checkout code from git
+      - checkout
       - run:
           name: Run migrations
           command: |
@@ -163,13 +188,13 @@ jobs:
           command: |
             # Your code here
             exit 1
-      # Here's where you will add some code to rollback on failure
+     # Here's where you will add some code to rollback on failure      
 
   deploy-frontend:
     docker:
-      # Docker image here that supports AWS CLI
+      - image: circleci/node:13.8.0
     steps:
-      # Checkout code from git
+      - checkout
       - run:
           name: Install dependencies
           command: |
@@ -184,13 +209,13 @@ jobs:
           name: Deploy frontend objects
           command: |
             # your code here
-      # Here's where you will add some code to rollback on failure
-
+      # Here's where you will add some code to rollback on failure      
+                    
   deploy-backend:
     docker:
-      # Docker image here that supports Ansible
+      - image: python:3.7-alpine3.12
     steps:
-      # Checkout code from git
+      - checkout
       # Add ssh keys with fingerprint
       # attach workspace
       - run:
@@ -201,13 +226,13 @@ jobs:
           name: Deploy backend
           command: |
             # your code here
-      # Here's where you will add some code to rollback on failure
+      # Here's where you will add some code to rollback on failure  
 
   smoke-test:
     docker:
-      # Lightweight Docker image
+      - image: circleci/node:13.8.0
     steps:
-      # Checkout code from git
+      - checkout
       - run:
           name: Install dependencies
           command: |
@@ -224,13 +249,13 @@ jobs:
           name: Frontend smoke test.
           command: |
             # your code here
-      # Here's where you will add some code to rollback on failure
+      # Here's where you will add some code to rollback on failure  
 
   cloudfront-update:
     docker:
-      # Docker image here that supports AWS CLI
+      - image: amazon/aws-cli
     steps:
-      # Checkout code from git
+      - checkout
       - run:
           name: Install dependencies
           command: |
@@ -239,13 +264,13 @@ jobs:
           name: Update cloudfront distribution
           command: |
             # your code here
-      # Here's where you will add some code to rollback on failure
+      # Here's where you will add some code to rollback on failure  
 
 cleanup:
   docker:
-    # Docker image here
+    - image: amazon/aws-cli
   steps:
-    # Checkout code from git
+    - checkout
     - run:
         name: Get old stack workflow id
         command: |
@@ -259,9 +284,8 @@ cleanup:
           then
             # your code here
           fi
-
 workflows:
-  default:
+  my_workflow:
     jobs:
       - build-frontend
       - build-backend
