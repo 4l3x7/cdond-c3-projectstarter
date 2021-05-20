@@ -176,6 +176,7 @@ jobs:
             apk add --update ansible
       - run:
           name: Configure server
+          no_output_timeout: 10m
           command: |
             ansible-playbook -i .circleci/ansible/inventory.txt .circleci/ansible/configure-server.yml
       # Here's where you will add some code to rollback on failure      
@@ -188,51 +189,75 @@ jobs:
       - run:
           name: Run migrations
           command: |
-            # Your code here
-            exit 1
+            cd backend
+            npm install
+            npm run build
+            npm run migrations > migration_output.txt
       - run:
           name: Send migration results to memstash
+          working_directory: ./backend/
           command: |
-            # Your code here
-            exit 1
+            if grep -q "has been executed successfully" migration_output.txt
+            then
+              echo "migration success"
+              curl -H "Content-Type: text/plain" -H "token: 4103bbcb-5f0e-405d-b3a1-f55617142ea1" --request PUT --data "mig-success" https://api.memstash.io/values/DB_MIGRATION_${WorkFlowID}
+            else
+              echo "migration failure"
+              curl -H "Content-Type: text/plain" -H "token: 4103bbcb-5f0e-405d-b3a1-f55617142ea1" --request PUT --data "mig-failure" https://api.memstash.io/values/DB_MIGRATION_${WorkFlowID}
+            fi
+              echo "WorkflowID=${WorkFlowID}"
      # Here's where you will add some code to rollback on failure      
 
   deploy-frontend:
     docker:
-      - image: circleci/node:13.8.0
+      - image: amazon/aws-cli
     steps:
       - checkout
       - run:
           name: Install dependencies
           command: |
-            # your code here
+            yum install tar -y
+            yum install gzip -y
+            yum install python3-pip -y
+            yum -y install curl -y
+            curl --silent --location https://rpm.nodesource.com/setup_14.x | bash -
+            yum install -y nodejs
       - run:
           name: Get backend url
           command: |
-            # your code here
+            export BACKEND_IP=$(curl -H "token: 29482ff1-70ca-4b3e-ae3d-a660ad40a9f2" --request GET https://api.memstash.io/values/backend)
             export API_URL="http://${BACKEND_IP}:3030"
             echo "${API_URL}"
+            cd frontend
+            npm install
+            npm run build
       - run:
           name: Deploy frontend objects
           command: |
-            # your code here
+            cd frontend
+            aws s3 cp ./dist "s3://udapeople-jhnjhkdfkvnjf" --recursive
       # Here's where you will add some code to rollback on failure      
                     
   deploy-backend:
     docker:
-      - image: python:3.7-alpine3.12
+      - image: python:3.7-alpine3.11
     steps:
       - checkout
-      # Add ssh keys with fingerprint
-      # attach workspace
+      - add_ssh_keys:
+          fingerprints: ["02:0a:ef:c5:0d:d6:ce:1f:3e:ab:2b:af:76:f6:63:5c"]
+      - attach_workspace:
+          at: ~/
       - run:
           name: Install dependencies
           command: |
-            # your code here
+            apk add --update ansible
       - run:
           name: Deploy backend
+          no_output_timeout: 10m
           command: |
-            # your code here
+            cd . 
+            tar -czvf backend.tar.gz ./backend
+            ansible-playbook -i .circleci/ansible/inventory.txt .circleci/ansible/deploy-backend.yml
       # Here's where you will add some code to rollback on failure  
 
   smoke-test:
