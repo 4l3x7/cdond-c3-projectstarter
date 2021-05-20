@@ -26,7 +26,7 @@ commands:
           name: Revert migrations
           when: on_fail
           command: |
-            RES=$(curl -H "token: 4103bbcb-5f0e-405d-b3a1-f55617142ea1" --request GET https://api.memstash.io/values/DB_MIGRATION_${WorkFlowID})
+            RES=$(curl -H "token: 4103bbcb-5f0e-405d-b3a1-f55617142ea1" --request GET https://api.memstash.io/values/DB_MIGRATION_${CIRCLE_WORKFLOW_ID})
             echo ${RES}
             if ((${RES}==mig-success))
             then
@@ -220,16 +220,16 @@ jobs:
             if grep -q "has been executed successfully" migration_output.txt
             then
               echo "migration success"
-              curl -H "Content-Type: text/plain" -H "token: 4103bbcb-5f0e-405d-b3a1-f55617142ea1" --request PUT --data "mig-success" https://api.memstash.io/values/DB_MIGRATION_${WorkFlowID}
+              curl -H "Content-Type: text/plain" -H "token: 4103bbcb-5f0e-405d-b3a1-f55617142ea1" --request PUT --data "mig-success" https://api.memstash.io/values/DB_MIGRATION_${CIRCLE_WORKFLOW_ID}
             else
               echo "migration failure"
-              curl -H "Content-Type: text/plain" -H "token: 4103bbcb-5f0e-405d-b3a1-f55617142ea1" --request PUT --data "mig-failure" https://api.memstash.io/values/DB_MIGRATION_${WorkFlowID}
+              curl -H "Content-Type: text/plain" -H "token: 4103bbcb-5f0e-405d-b3a1-f55617142ea1" --request PUT --data "mig-failure" https://api.memstash.io/values/DB_MIGRATION_${CIRCLE_WORKFLOW_ID}
             fi
-              echo "WorkflowID=${WorkFlowID}"
+              echo "WorkflowID=${CIRCLE_WORKFLOW_ID}"
       - destroy-environment:
-          workflow_id: ${WorkFlowID}
+          workflow_id: ${CIRCLE_WORKFLOW_ID}
       - revert-migrations:
-          workflow_id: ${WorkFlowID}    
+          workflow_id: ${CIRCLE_WORKFLOW_ID}    
 
   deploy-frontend:
     docker:
@@ -258,7 +258,7 @@ jobs:
           name: Deploy frontend objects
           command: |
             cd frontend
-            aws s3 cp ./dist "s3://udapeople-${WorkFlowID}" --recursive
+            aws s3 cp ./dist "s3://udapeople-${CIRCLE_WORKFLOW_ID}" --recursive
       # Here's where you will add some code to rollback on failure      
                     
   deploy-backend:
@@ -274,6 +274,7 @@ jobs:
           name: Install dependencies
           command: |
             apk add --update ansible
+            pip install awscli
       - run:
           name: Deploy backend
           no_output_timeout: 10m
@@ -295,6 +296,7 @@ jobs:
             apk add --no-cache --upgrade bash
             apk add --no-cache --update ansible
             apk add --no-cache openssh-client
+            pip install awscli
       - run:
           name: Get backend url
           command: |
@@ -313,7 +315,7 @@ jobs:
       - run:
           name: Frontend smoke test.
           command: |
-            URL="http://udapeople-${WorkFlowID}.s3-website.eu-west-2.amazonaws.com/#/employees"
+            URL="http://udapeople-${CIRCLE_WORKFLOW_ID}.s3-website.eu-west-2.amazonaws.com/#/employees"
             if curl -s ${URL} | grep "Welcome"
             then
               return 0
