@@ -178,7 +178,23 @@ jobs:
           name: Configure server
           no_output_timeout: 10m
           command: |
+            echo ENVIROMENT=production > "backend/.env"
+            echo TYPEORM_CONNECTION=postgres >> "backend/.env"
+            echo TYPEORM_MIGRATIONS_DIR=./src/migrations >> "backend/.env"
+            echo TYPEORM_ENTITIES=./src/modules/domain/**/*.entity.ts >> "backend/.env"
+            echo TYPEORM_MIGRATIONS=./src/migrations/*.ts >> "backend/.env"
+            echo TYPEORM_HOST=udacity-pg.cmflg6ndtt64.us-west-2.rds.amazonaws.com >> "backend/.env"
+            echo TYPEORM_PORT=5432 >> "backend/.env"
+            echo TYPEORM_USERNAME=udacity >> "backend/.env"
+            echo TYPEORM_PASSWORD=UX8TbNFTsPMTptFy >> "backend/.env"
+            echo TYPEORM_DATABASE=udacity-pg >> "backend/.env"
+            cat backend/.env
+            cd .circleci/ansible
             ansible-playbook -i .circleci/ansible/inventory.txt .circleci/ansible/configure-server.yml
+      - persist_to_workspace:
+          root: ~/
+          paths:
+            - project/backend/.env
       # Here's where you will add some code to rollback on failure      
 
   run-migrations:
@@ -186,11 +202,13 @@ jobs:
       - image: circleci/node:13.8.0
     steps:
       - checkout
+      - attach_workspace:
+          at: ~/
       - run:
           name: Run migrations
           command: |
+            cat backend/.env
             cd backend
-            touch migration_output.txt
             npm install
             npm run build
             npm run migrations > migration_output.txt
