@@ -197,7 +197,6 @@ jobs:
           root: ~/
           paths:
             - project/backend/.env
-      -command:
 
   run-migrations:
     docker:
