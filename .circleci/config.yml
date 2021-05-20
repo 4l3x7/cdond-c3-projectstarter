@@ -147,7 +147,7 @@ jobs:
           command: |
             aws ec2 describe-instances         --query 'Reservations[*].Instances[*].PublicIpAddress'       --output text >> .circleci/ansible/inventory.txt
       - run:
-          name: Save backend to memstash.io
+          name: Save backend IP to memstash.io
           command: |
             echo d = "`aws ec2 describe-instances         --query 'Reservations[*].Instances[*].PublicIpAddress'  --filters "Name=tag:project,Values=udapeople"      --output text`" | curl -H "Content-Type: text/plain" -H "token: 29482ff1-70ca-4b3e-ae3d-a660ad40a9f2" --request PUT -d @-  https://api.memstash.io/values/backend --data d
       - run:
@@ -190,6 +190,7 @@ jobs:
           name: Run migrations
           command: |
             cd backend
+            touch migration_output.txt
             npm install
             npm run build
             npm run migrations > migration_output.txt
