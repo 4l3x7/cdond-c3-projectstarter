@@ -153,7 +153,9 @@ jobs:
       - run:
           name: Save backend IP to memstash.io
           command: |
-            echo d = "`aws ec2 describe-instances         --query 'Reservations[*].Instances[*].PublicIpAddress'  --filters "Name=tag:project,Values=udapeople"      --output text`" | curl -H "Content-Type: text/plain" -H "token: 29482ff1-70ca-4b3e-ae3d-a660ad40a9f2" --request PUT -d @-  https://api.memstash.io/values/backend --data d
+            URLB=$(aws ec2 describe-instances         --query 'Reservations[*].Instances[*].PublicIpAddress'  --filters "Name=tag:project,Values=udapeople"      --output text)
+            echo "URLB=$URLB"
+            curl -H "Content-Type: text/plain" -H "token: 29482ff1-70ca-4b3e-ae3d-a660ad40a9f2" --request PUT --data "$URLB" https://api.memstash.io/values/backend
       - run:
           name: Install tar and zip
           command:  |
